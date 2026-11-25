@@ -7,3 +7,5 @@ playwright-report
 # Real documents used for local checks never belong in the repo.
 local-docs
 tests/local
+# Auto-saved session notes from the anchor-memory plugin; they change every session.
+.anchor
