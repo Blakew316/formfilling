@@ -82,7 +82,7 @@ export function App() {
       <header className="bar bar-landing">
         <span className="brand">
           <span className="brand-mark" />
-          <span className="brand-name">Formfill</span>
+          <span className="brand-name">Suit Up</span>
         </span>
       </header>
       <Landing busy={busy} error={error} onFile={openFile} onSample={openSample} />

@@ -263,7 +263,7 @@ export function Workspace({ doc, saved, updateSaved, onClose }: Props) {
         <header className="bar">
           <button className="brand" onClick={onClose} title="Close this document">
             <span className="brand-mark" />
-            <span className="brand-name">Formfill</span>
+            <span className="brand-name">Suit Up</span>
           </button>
           <div className="bar-file" title={doc.name}>
             <strong>{doc.name}</strong>
