@@ -1,22 +1,31 @@
 /**
- * Top of the app: holds the saved details and the open document, and switches
- * between the landing screen and the workspace.
+ * Top of the app: saved details, the saved-documents list, and switching between
+ * the start screen and the editor. Every opened PDF is stored (src/state/library.ts)
+ * so it can be reopened, downloaded or printed later.
  */
 import { useCallback, useEffect, useState } from 'react';
 import { detectFields } from './engine/detect';
+import type { Content } from './state/editor';
+import { createDoc, deleteDoc, listDocs, loadDoc, requestPersistence, type SavedDocMeta } from './state/library';
 import { loadSaved, storeSaved, type Saved } from './state/storage';
 import type { OpenDocument } from './ui/context';
 import { Landing } from './ui/Landing';
+import { downloadPdf, finishedPdf, outputName, printPdf } from './ui/output';
 import { Workspace } from './ui/Workspace';
 
-/** Files beyond this are almost never forms, and would stall a phone. */
 const MAX_BYTES = 80 * 1024 * 1024;
 
 export function App() {
   const [saved, setSaved] = useState<Saved>(loadSaved);
-  const [doc, setDoc] = useState<OpenDocument | null>(null);
+  const [doc, setDoc] = useState<{ open: OpenDocument; content?: Content } | null>(null);
+  const [docs, setDocs] = useState<SavedDocMeta[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const refresh = useCallback(() => listDocs().then(setDocs), []);
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
 
   const updateSaved = useCallback((patch: Partial<Saved>) => {
     setSaved((current) => {
@@ -26,35 +35,72 @@ export function App() {
     });
   }, []);
 
-  const open = useCallback(async (name: string, bytes: Uint8Array) => {
+  /** Runs a step that needs the PDF engine, showing its error message on the start screen. */
+  const guarded = useCallback(async (step: () => Promise<void>) => {
     setBusy(true);
     setError(null);
     try {
-      const { openPdf } = await import('./pdf/pdfjs');
-      const pdf = await openPdf(bytes);
-      const { fields, blocks } = detectFields(pdf.texts);
-      setDoc({ name, bytes, proxy: pdf.proxy, pages: pdf.pages, fields, blocks, widgets: pdf.widgets, sealed: pdf.hasDigitalSignature });
+      await step();
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'That file could not be opened.');
+      setError(cause instanceof Error ? cause.message : 'Something went wrong.');
     } finally {
       setBusy(false);
     }
   }, []);
 
-  const openFile = useCallback(
-    async (file: File) => {
-      if (file.size > MAX_BYTES) return setError('That file is larger than 80 MB, which is more than this page can open.');
-      open(file.name, new Uint8Array(await file.arrayBuffer()));
+  const openBytes = useCallback(
+    async (id: string, name: string, bytes: Uint8Array, content?: Content) => {
+      const { openPdf } = await import('./pdf/pdfjs');
+      const pdf = await openPdf(bytes);
+      const { fields, blocks } = detectFields(pdf.texts);
+      setDoc({
+        open: { id, name, bytes, proxy: pdf.proxy, pages: pdf.pages, fields, blocks, widgets: pdf.widgets, sealed: pdf.hasDigitalSignature },
+        content,
+      });
     },
-    [open],
+    [],
   );
 
-  const openSample = useCallback(async () => {
-    const { buildSampleContract } = await import('./sample/sampleContract');
-    open('Sample agreement.pdf', await buildSampleContract());
-  }, [open]);
+  const openFile = useCallback(
+    (file: File) =>
+      guarded(async () => {
+        if (file.size > MAX_BYTES) throw new Error('File is over 80 MB.');
+        const bytes = new Uint8Array(await file.arrayBuffer());
+        const { openPdf } = await import('./pdf/pdfjs');
+        const pdf = await openPdf(bytes);
+        pdf.proxy.loadingTask.destroy();
+        requestPersistence();
+        const id = await createDoc(file.name, bytes, pdf.pages.length);
+        await openBytes(id, file.name, bytes);
+      }),
+    [guarded, openBytes],
+  );
 
-  // A PDF dropped anywhere on the window opens, including over an already open document.
+  const openSaved = useCallback(
+    (id: string) =>
+      guarded(async () => {
+        const record = await loadDoc(id);
+        if (!record) throw new Error('That document is no longer saved.');
+        await openBytes(id, record.name, record.bytes, record.content);
+      }),
+    [guarded, openBytes],
+  );
+
+  const output = useCallback(
+    (id: string, mode: 'download' | 'print') =>
+      guarded(async () => {
+        const record = await loadDoc(id);
+        if (!record) throw new Error('That document is no longer saved.');
+        const { openPdf } = await import('./pdf/pdfjs');
+        const pdf = await openPdf(record.bytes);
+        const bytes = await finishedPdf(record.bytes, pdf.pages, record.content);
+        pdf.proxy.loadingTask.destroy();
+        if (mode === 'print') printPdf(bytes);
+        else downloadPdf(bytes, outputName(record.name, record.content));
+      }),
+    [guarded],
+  );
+
   useEffect(() => {
     const allow = (e: DragEvent) => e.dataTransfer?.types.includes('Files') && e.preventDefault();
     const drop = (e: DragEvent) => {
@@ -72,20 +118,22 @@ export function App() {
   }, [openFile]);
 
   const close = useCallback(() => {
-    doc?.proxy.loadingTask.destroy();
+    doc?.open.proxy.loadingTask.destroy();
     setDoc(null);
-  }, [doc]);
+    refresh();
+  }, [doc, refresh]);
 
-  if (doc) return <Workspace key={doc.name + doc.bytes.length} doc={doc} saved={saved} updateSaved={updateSaved} onClose={close} />;
+  if (doc) return <Workspace key={doc.open.id} doc={doc.open} initial={doc.content} saved={saved} updateSaved={updateSaved} onClose={close} />;
   return (
-    <>
-      <header className="bar bar-landing">
-        <span className="brand">
-          <span className="brand-mark" />
-          <span className="brand-name">Suit Up</span>
-        </span>
-      </header>
-      <Landing busy={busy} error={error} onFile={openFile} onSample={openSample} />
-    </>
+    <Landing
+      busy={busy}
+      error={error}
+      docs={docs}
+      onFile={openFile}
+      onOpen={openSaved}
+      onDownload={(id) => output(id, 'download')}
+      onPrint={(id) => output(id, 'print')}
+      onDelete={(id) => deleteDoc(id).then(refresh)}
+    />
   );
 }

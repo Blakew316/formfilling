@@ -73,9 +73,9 @@ export function SignatureDialog({ role, fullName, onSave, onClose }: Props) {
 
   return (
     <div className="scrim" onPointerDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="dialog" role="dialog" aria-modal="true" aria-label={`Create your ${noun}`}>
+      <div className="dialog" role="dialog" aria-modal="true" aria-label={noun === 'signature' ? 'Signature' : 'Initials'}>
         <header className="dialog-head">
-          <h2>Create your {noun}</h2>
+          <h2>{noun === 'signature' ? 'Signature' : 'Initials'}</h2>
           <button className="icon-button" aria-label="Close" onClick={onClose}>
             <Icon name="close" />
           </button>
@@ -93,7 +93,7 @@ export function SignatureDialog({ role, fullName, onSave, onClose }: Props) {
           <div className="pad">
             <canvas ref={canvas} aria-label={`Draw your ${noun} here`} />
             <span className="pad-line" />
-            {!hasInk && <span className="pad-hint">Draw with your finger, pen or mouse</span>}
+            {!hasInk && <span className="pad-hint">Sign here</span>}
             {hasInk && (
               <button
                 className="pad-clear"
@@ -112,8 +112,8 @@ export function SignatureDialog({ role, fullName, onSave, onClose }: Props) {
               className="input"
               value={typed}
               autoFocus
-              placeholder={role === 'signature' ? 'Your full name' : 'Your initials'}
-              aria-label={role === 'signature' ? 'Your full name' : 'Your initials'}
+              placeholder={role === 'signature' ? 'Full name' : 'Initials'}
+              aria-label={role === 'signature' ? 'Full name' : 'Initials'}
               onChange={(e) => setTyped(e.target.value)}
             />
             <div className="typed-styles" role="radiogroup" aria-label="Handwriting style">
@@ -126,7 +126,7 @@ export function SignatureDialog({ role, fullName, onSave, onClose }: Props) {
                   style={{ fontFamily: `"${s.family}", cursive`, fontSize: 30 * s.scale, color, opacity: fontsReady ? 1 : 0 }}
                   onClick={() => setStyleId(s.id)}
                 >
-                  {typed || (role === 'signature' ? 'Your name' : 'AB')}
+                  {typed || (role === 'signature' ? 'Name' : 'AB')}
                 </button>
               ))}
             </div>
@@ -148,10 +148,9 @@ export function SignatureDialog({ role, fullName, onSave, onClose }: Props) {
             ))}
           </div>
           <button className="button button-primary" disabled={!canSave} onClick={save}>
-            Use {noun}
+            Save
           </button>
         </footer>
-        <p className="dialog-note">By using this {noun} you confirm it represents you and that you mean to sign.</p>
       </div>
     </div>
   );

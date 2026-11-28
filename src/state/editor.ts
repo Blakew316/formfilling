@@ -103,8 +103,9 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
   }
 }
 
-export function useEditor() {
-  return useReducer(editorReducer, initialEditor);
+/** Starts from previously saved content when reopening a document. */
+export function useEditor(initial?: Content) {
+  return useReducer(editorReducer, initial, (c) => (c ? { ...initialEditor, present: c } : initialEditor));
 }
 
 let counter = 0;

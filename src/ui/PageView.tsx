@@ -130,7 +130,7 @@ export function PageView({ page }: { page: PageInfo }) {
               id={`slot-${field.id}`}
               className={`slot slot-${owner}${field.confidence !== 'auto' ? ' is-optional' : ''}${pulseId === field.id ? ' is-pulsing' : ''}`}
               style={{ left: field.rect.x * zoom, top: field.rect.y * zoom, width: field.rect.w * zoom, height: field.rect.h * zoom, fontSize: Math.min(10, field.rect.h * zoom * 0.6) }}
-              title={owner === 'other' ? `${field.label} — this looks like the other party’s line` : `Fill ${field.label.toLowerCase() || 'this blank'}`}
+              title={owner === 'other' ? 'Other party' : field.label || 'Fill'}
               onClick={() => fillField(field)}
             >
               <span>{label}</span>

@@ -17,11 +17,12 @@ export interface Saved {
   initials: SavedInk | null;
 }
 
-const KEY = 'formfill.v1';
+const KEY = 'suitup.v1';
+const LEGACY_KEY = 'formfill.v1';
 
 export function loadSaved(): Saved {
   try {
-    const raw = JSON.parse(localStorage.getItem(KEY) ?? 'null') as Partial<Saved> | null;
+    const raw = JSON.parse(localStorage.getItem(KEY) ?? localStorage.getItem(LEGACY_KEY) ?? 'null') as Partial<Saved> | null;
     return {
       profile: { ...EMPTY_PROFILE, ...(raw?.profile ?? {}) },
       signature: raw?.signature ?? null,

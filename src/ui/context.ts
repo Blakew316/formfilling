@@ -10,6 +10,8 @@ import type { Saved, SavedInk } from '../state/storage';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
 
 export interface OpenDocument {
+  /** Key of the saved copy in the document library. */
+  id: string;
   name: string;
   bytes: Uint8Array;
   proxy: PDFDocumentProxy;

@@ -167,8 +167,8 @@ export async function exportPdf(input: ExportInput): Promise<Uint8Array> {
     const encrypted = /encrypt/i.test(String(cause));
     throw new Error(
       encrypted
-        ? 'This PDF is password-protected, so a filled copy cannot be saved from it.'
-        : 'This PDF could not be prepared for download. The file may be damaged.',
+        ? 'Password-protected PDFs can’t be saved.'
+        : 'This PDF couldn’t be saved. It may be damaged.',
       { cause },
     );
   }

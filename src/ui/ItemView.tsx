@@ -12,7 +12,7 @@ import { DOC_FONT, DOC_LINE_HEIGHT, textWidth } from './textMetrics';
 function boxOf(item: Item): { w: number; h: number } {
   if (item.type === 'image') return { w: item.w, h: item.h };
   if (item.type === 'check') return { w: item.size, h: item.size };
-  return { w: Math.max(textWidth(item.text || 'Type here', item.fontSize), 12), h: item.fontSize * DOC_LINE_HEIGHT };
+  return { w: Math.max(textWidth(item.text || 'Text', item.fontSize), 12), h: item.fontSize * DOC_LINE_HEIGHT };
 }
 
 export function ItemView({ item, page }: { item: Item; page: PageInfo }) {
@@ -123,7 +123,7 @@ export function ItemView({ item, page }: { item: Item; page: PageInfo }) {
           />
         ) : (
           <div className={`item-text${item.text ? '' : ' is-empty'}`} style={{ font: `${item.fontSize * zoom}px/${DOC_LINE_HEIGHT} ${DOC_FONT}` }}>
-            {item.text || 'Type here'}
+            {item.text || 'Text'}
           </div>
         ))}
       {item.type === 'image' && <img src={item.src} alt={item.role === 'signature' ? 'Your signature' : 'Your initials'} draggable={false} />}

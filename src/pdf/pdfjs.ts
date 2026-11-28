@@ -34,8 +34,8 @@ export async function openPdf(bytes: Uint8Array): Promise<OpenedPdf> {
     const name = (cause as { name?: string })?.name;
     throw new Error(
       name === 'PasswordException'
-        ? 'This PDF needs a password to open. Password-protected files are not supported yet.'
-        : 'That file could not be read as a PDF. It may be damaged or a different kind of file.',
+        ? 'Password-protected PDFs aren’t supported.'
+        : 'Not a readable PDF.',
       { cause },
     );
   }

@@ -2,6 +2,7 @@
  * The side panel: saved details that feed Auto-fill, signature and initials,
  * and the tools for placing things by hand.
  */
+import type { ReactNode } from 'react';
 import { ownerOf } from '../engine/autofill';
 import type { DateFormat, Profile } from '../engine/profile';
 import { formatDate } from '../engine/profile';
@@ -15,7 +16,7 @@ const DETAILS: { key: keyof Omit<Profile, 'dateFormat'>; label: string; auto: st
   { key: 'title', label: 'Title', auto: 'organization-title' },
   { key: 'email', label: 'Email', auto: 'email', type: 'email' },
   { key: 'phone', label: 'Phone', auto: 'tel', type: 'tel' },
-  { key: 'street', label: 'Street address', auto: 'address-line1' },
+  { key: 'street', label: 'Street', auto: 'address-line1' },
   { key: 'city', label: 'City', auto: 'address-level2' },
   { key: 'state', label: 'State', auto: 'address-level1', half: true },
   { key: 'zip', label: 'ZIP', auto: 'postal-code', half: true },
@@ -30,6 +31,7 @@ const TOOLS: { tool: Tool; label: string; icon: IconName }[] = [
 ];
 
 interface Props {
+  top: ReactNode;
   onAutofill: () => void;
   onNext: () => void;
   onForget: () => void;
@@ -37,7 +39,7 @@ interface Props {
   onClose: () => void;
 }
 
-export function Sidebar({ onAutofill, onNext, onForget, open, onClose }: Props) {
+export function Sidebar({ top, onAutofill, onNext, onForget, open, onClose }: Props) {
   const { doc, state, dispatch, saved, updateSaved, requestInk } = useWorkspace();
   const profile = saved.profile;
   const setProfile = (patch: Partial<Profile>) => updateSaved({ profile: { ...profile, ...patch } });
@@ -59,37 +61,30 @@ export function Sidebar({ onAutofill, onNext, onForget, open, onClose }: Props) 
   return (
     <aside className={`sidebar${open ? ' is-open' : ''}`} aria-label="Details and tools">
       <button className="sidebar-grip" aria-label="Close panel" onClick={onClose} />
+      {top}
       {doc.sealed && (
         <div className="notice">
-          <Icon name="lock" size={18} />
-          <p>
-            <strong>This PDF carries a digital seal</strong> (for example from DocuSign). Any edit, here or in any other editor,
-            ends that seal: your download keeps everything visible on the page but will no longer verify as the sealed original.
-            To add to the same envelope, sign inside the service that sent it.
-          </p>
+          <Icon name="lock" size={16} />
+          <p>Digitally sealed PDF. Editing voids the seal.</p>
         </div>
       )}
 
       <section className="panel">
         <button className="button button-primary button-wide" onClick={onAutofill}>
-          Auto-fill blanks
+          Auto-fill
         </button>
         <p className="panel-status">
-          {mine.length === 0 && doc.widgets.length === 0
-            ? 'No blanks were detected. Use the tools below to place text or a signature anywhere.'
-            : left === 0
-              ? 'Every detected blank is filled.'
-              : `${left} of ${mine.length} blanks left.`}
+          {mine.length === 0 && doc.widgets.length === 0 ? 'No blanks found' : left === 0 ? 'All blanks filled' : `${left} of ${mine.length} left`}
           {left > 0 && (
             <button className="link" onClick={onNext}>
-              Next blank
+              Next
             </button>
           )}
         </p>
       </section>
 
       <section className="panel">
-        <h3>Add to document</h3>
+        <h3>Add</h3>
         <div className="tools">
           {TOOLS.map((t) => (
             <button key={t.tool} className={`tool${state.tool === t.tool ? ' is-on' : ''}`} aria-pressed={state.tool === t.tool} onClick={() => pick(t.tool)}>
@@ -101,15 +96,15 @@ export function Sidebar({ onAutofill, onNext, onForget, open, onClose }: Props) 
         <div className="inks">
           {(['signature', 'initials'] as const).map((role) => (
             <button key={role} className="ink" onClick={() => requestInk(role)} aria-label={`${saved[role] ? 'Change' : 'Create'} ${role}`}>
-              {saved[role] ? <img src={saved[role]!.src} alt="" /> : <span className="ink-empty">Create {role}</span>}
-              <span className="ink-action">{saved[role] ? 'Change' : 'Add'}</span>
+              {saved[role] ? <img src={saved[role]!.src} alt="" /> : <span className="ink-empty">{role === 'signature' ? 'Signature' : 'Initials'}</span>}
+              <span className="ink-action">{saved[role] ? 'Change' : 'Create'}</span>
             </button>
           ))}
         </div>
       </section>
 
       <section className="panel">
-        <h3>Your details</h3>
+        <h3>Details</h3>
         <div className="details">
           {DETAILS.map((d) => (
             <label key={d.key} className={`field${d.half ? ' is-half' : ''}`}>
@@ -129,10 +124,9 @@ export function Sidebar({ onAutofill, onNext, onForget, open, onClose }: Props) 
           </label>
         </div>
         <p className="panel-foot">
-          <Icon name="lock" size={14} />
-          Saved in this browser only.
+          Saved on this device
           <button className="link" onClick={onForget}>
-            Forget
+            Clear
           </button>
         </p>
       </section>

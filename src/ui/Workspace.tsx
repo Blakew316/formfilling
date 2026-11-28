@@ -6,33 +6,38 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ownerOf, planAutofill, planFormFill } from '../engine/autofill';
 import { EMPTY_PROFILE, profileKeyFor, valueFor } from '../engine/profile';
 import type { Field, ImageItem, Item } from '../engine/types';
-import { useEditor } from '../state/editor';
+import { useEditor, type Content } from '../state/editor';
+import { saveContent } from '../state/library';
 import { clearSaved, type Saved, type SavedInk } from '../state/storage';
 import { Ctx, type OpenDocument, type WorkspaceContext } from './context';
 import { inkForField, itemForTool, textForField } from './fill';
 import { Icon } from './Icons';
 import { PageView } from './PageView';
 import { Sidebar } from './Sidebar';
+import { ThemeToggle } from './ThemeToggle';
 import { SignatureDialog } from './SignatureDialog';
-import { baselineRatio, overflows, rasterizeText } from './textMetrics';
+import { overflows } from './textMetrics';
+import { downloadPdf, finishedPdf, outputName, printPdf } from './output';
 
 interface Props {
   doc: OpenDocument;
+  /** Saved content when reopening a document from the library. */
+  initial?: Content;
   saved: Saved;
   updateSaved: (patch: Partial<Saved>) => void;
   onClose: () => void;
 }
 
 const TOOL_HINT = {
-  text: 'Click where the text should go',
-  date: 'Click where the date should go',
-  check: 'Click where the check mark should go',
-  signature: 'Click where you want to sign',
-  initials: 'Click where your initials should go',
+  text: 'Click to place text',
+  date: 'Click to place date',
+  check: 'Click to place check',
+  signature: 'Click to sign',
+  initials: 'Click to initial',
 };
 
-export function Workspace({ doc, saved, updateSaved, onClose }: Props) {
-  const [state, dispatch] = useEditor();
+export function Workspace({ doc, initial, saved, updateSaved, onClose }: Props) {
+  const [state, dispatch] = useEditor(initial);
   const [factor, setFactor] = useState(1);
   const [fit, setFit] = useState(1);
   const [toast, setToast] = useState<string | null>(null);
@@ -61,6 +66,37 @@ export function Workspace({ doc, saved, updateSaved, onClose }: Props) {
     return () => clearTimeout(timer);
   }, [toast]);
 
+  // Every change is saved to the document library shortly after it happens, and immediately on close.
+  const [saveState, setSaveState] = useState<'saved' | 'saving' | 'error'>('saved');
+  const pending = useRef<Content | null>(null);
+  const flush = useCallback(async () => {
+    const content = pending.current;
+    if (!content) return;
+    pending.current = null;
+    try {
+      await saveContent(doc.id, content);
+      setSaveState('saved');
+    } catch {
+      setSaveState('error');
+    }
+  }, [doc.id]);
+  useEffect(() => {
+    if (state.present === initial || (!initial && !state.past.length && !state.future.length)) return;
+    pending.current = state.present;
+    setSaveState('saving');
+    const timer = setTimeout(flush, 400);
+    return () => clearTimeout(timer);
+  }, [state.present, state.past.length, state.future.length, initial, flush]);
+  useEffect(() => {
+    const onHide = () => void flush();
+    window.addEventListener('pagehide', onHide);
+    return () => window.removeEventListener('pagehide', onHide);
+  }, [flush]);
+  const close = useCallback(async () => {
+    await flush();
+    onClose();
+  }, [flush, onClose]);
+
   const addItems = useCallback(
     (items: Item[], select?: string | null, editing?: string | null) =>
       dispatch({ type: 'edit', select, editing, update: (c) => ({ ...c, items: [...c.items, ...items] }) }),
@@ -83,7 +119,7 @@ export function Workspace({ doc, saved, updateSaved, onClose }: Props) {
       const { state: s, saved: sv } = live.current;
       const existing = s.present.items.find((it) => it.fieldId === field.id);
       if (existing) return dispatch({ type: 'select', id: existing.id });
-      if (ownerOf(field, doc.blocks, sv.profile) === 'other') setToast('That looks like the other party’s line. Undo if you did not mean to fill it.');
+      if (ownerOf(field, doc.blocks, sv.profile) === 'other') setToast('Other party’s line');
       if (field.kind === 'signature' || field.kind === 'initials') {
         const role = field.kind;
         const place = (ink: SavedInk) => {
@@ -96,7 +132,7 @@ export function Workspace({ doc, saved, updateSaved, onClose }: Props) {
       const item = textForField(field, text);
       const copies = text ? repeatsOf(field).map((f) => textForField(f, text)) : [];
       addItems([item, ...copies], item.id, text ? null : item.id);
-      if (copies.length) setToast(`Filled ${copies.length + 1} matching blanks.`);
+      if (copies.length) setToast(`Filled ${copies.length + 1}`);
     },
     [addItems, dispatch, doc.blocks, repeatsOf, requestInk],
   );
@@ -127,7 +163,7 @@ export function Workspace({ doc, saved, updateSaved, onClose }: Props) {
       );
       if (!matches.length) return;
       addItems(matches.map((f) => textForField(f, text)));
-      setToast(`Filled ${matches.length} matching ${matches.length === 1 ? 'blank' : 'blanks'}${learn ? ' and saved it to your details' : ''}.`);
+      setToast(`Filled ${matches.length} more`);
     },
     [addItems, dispatch, doc.blocks, doc.fields, updateSaved],
   );
@@ -167,20 +203,13 @@ export function Workspace({ doc, saved, updateSaved, onClose }: Props) {
     const count = items.length + Object.keys(formFill).length;
     if (count === 0) {
       const empty = Object.entries(sv.profile).every(([k, v]) => k === 'dateFormat' || !v);
-      setToast(
-        empty
-          ? 'Add your details in the panel, then Auto-fill can complete the blanks.'
-          : tight
-            ? `${tight} ${tight === 1 ? 'blank is' : 'blanks are'} too short for your details. Click one to place the text yourself.`
-            : 'Nothing more to fill automatically. Click any highlighted blank to fill it.',
-      );
+      setToast(empty ? 'Add your details first' : tight ? `${tight} too long to fit. Fill by hand.` : 'Nothing to fill');
+
       if (empty) setPanelOpen(true);
       return;
     }
     dispatch({ type: 'edit', select: null, update: (c) => ({ items: [...c.items, ...items], formValues: { ...c.formValues, ...formFill } }) });
-    setToast(
-      `Filled ${count} ${count === 1 ? 'blank' : 'blanks'}. ${tight ? `${tight} too short to fill were left for you. ` : ''}Check each one before you download.`,
-    );
+    setToast(`Filled ${count}${tight ? ` · ${tight} too long, fill by hand` : ''}`);
   }, [dispatch, doc.blocks, doc.fields, doc.widgets, requestInk]);
 
   const nextBlank = useCallback(() => {
@@ -196,34 +225,22 @@ export function Workspace({ doc, saved, updateSaved, onClose }: Props) {
     if (page) scroller.current!.scrollTo({ top: page.offsetTop + target.rect.y * zoom - scroller.current!.clientHeight / 3, behavior: 'smooth' });
   }, [doc.blocks, doc.fields, pulseId, zoom]);
 
-  const download = useCallback(async () => {
-    const { state: s } = live.current;
-    setSaving(true);
-    try {
-      const { exportPdf } = await import('../engine/exportPdf');
-      const bytes = await exportPdf({
-        bytes: doc.bytes,
-        pages: doc.pages,
-        items: s.present.items,
-        formValues: s.present.formValues,
-        baselineRatio: baselineRatio(),
-        rasterizeText: (item) => rasterizeText(item.text, item.fontSize),
-      });
-      const signed = s.present.items.some((it) => it.type === 'image');
-      const name = `${doc.name.replace(/\.pdf$/i, '')}-${signed ? 'signed' : 'filled'}.pdf`;
-      const url = URL.createObjectURL(new Blob([bytes as BlobPart], { type: 'application/pdf' }));
-      const a = Object.assign(document.createElement('a'), { href: url, download: name });
-      document.body.append(a);
-      a.click();
-      a.remove();
-      setTimeout(() => URL.revokeObjectURL(url), 30_000);
-      setToast(`Saved ${name}`);
-    } catch (error) {
-      setToast(error instanceof Error ? error.message : 'The download could not be prepared.');
-    } finally {
-      setSaving(false);
-    }
-  }, [doc.bytes, doc.name, doc.pages]);
+  const output = useCallback(
+    async (mode: 'download' | 'print') => {
+      const { state: s } = live.current;
+      setSaving(true);
+      try {
+        const bytes = await finishedPdf(doc.bytes, doc.pages, s.present);
+        if (mode === 'print') printPdf(bytes);
+        else downloadPdf(bytes, outputName(doc.name, s.present));
+      } catch (error) {
+        setToast(error instanceof Error ? error.message : 'Couldn’t prepare the PDF.');
+      } finally {
+        setSaving(false);
+      }
+    },
+    [doc.bytes, doc.name, doc.pages],
+  );
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -260,44 +277,6 @@ export function Workspace({ doc, saved, updateSaved, onClose }: Props) {
   return (
     <Ctx.Provider value={context}>
       <div className="workspace">
-        <header className="bar">
-          <button className="brand" onClick={onClose} title="Close this document">
-            <span className="brand-mark" />
-            <span className="brand-name">Suit Up</span>
-          </button>
-          <div className="bar-file" title={doc.name}>
-            <strong>{doc.name}</strong>
-            <span>
-              {doc.pages.length} {doc.pages.length === 1 ? 'page' : 'pages'}
-            </span>
-          </div>
-          <div className="bar-actions">
-            <button className="icon-button" aria-label="Undo" disabled={!state.past.length} onClick={() => dispatch({ type: 'undo' })}>
-              <Icon name="undo" />
-            </button>
-            <button className="icon-button" aria-label="Redo" disabled={!state.future.length} onClick={() => dispatch({ type: 'redo' })}>
-              <Icon name="redo" />
-            </button>
-            <div className="zoom">
-              <button className="icon-button" aria-label="Zoom out" disabled={factor <= 0.5} onClick={() => setFactor((f) => Math.max(0.5, f - 0.25))}>
-                <Icon name="minus" />
-              </button>
-              <button className="zoom-value" onClick={() => setFactor(1)} title="Fit to width">
-                {Math.round(zoom * 100)}%
-              </button>
-              <button className="icon-button" aria-label="Zoom in" disabled={factor >= 3} onClick={() => setFactor((f) => Math.min(3, f + 0.25))}>
-                <Icon name="plus" />
-              </button>
-            </div>
-            <button className="icon-button panel-toggle" aria-label="Details and tools" onClick={() => setPanelOpen((o) => !o)}>
-              <Icon name="panel" />
-            </button>
-            <button className="button button-primary" disabled={saving} onClick={download}>
-              <Icon name="download" size={18} />
-              <span>{saving ? 'Preparing…' : 'Download'}</span>
-            </button>
-          </div>
-        </header>
 
         <div className="stage">
           <div ref={scroller} className="pages">
@@ -306,6 +285,49 @@ export function Workspace({ doc, saved, updateSaved, onClose }: Props) {
             ))}
           </div>
           <Sidebar
+            top={
+              <div className="side-top">
+                <div className="side-row">
+                  <button className="icon-button" aria-label="All documents" title="All documents" onClick={close}>
+                    <Icon name="back" />
+                  </button>
+                  <div className="side-file" title={doc.name}>
+                    <strong>{doc.name}</strong>
+                    <span>{saveState === 'saving' ? 'Saving…' : saveState === 'error' ? 'Not saved' : 'Saved'}</span>
+                  </div>
+                  <ThemeToggle />
+                </div>
+                <div className="side-row">
+                  <button className="icon-button" aria-label="Undo" title="Undo" disabled={!state.past.length} onClick={() => dispatch({ type: 'undo' })}>
+                    <Icon name="undo" />
+                  </button>
+                  <button className="icon-button" aria-label="Redo" title="Redo" disabled={!state.future.length} onClick={() => dispatch({ type: 'redo' })}>
+                    <Icon name="redo" />
+                  </button>
+                  <div className="zoom">
+                    <button className="icon-button" aria-label="Zoom out" disabled={factor <= 0.5} onClick={() => setFactor((f) => Math.max(0.5, f - 0.25))}>
+                      <Icon name="minus" />
+                    </button>
+                    <button className="zoom-value" onClick={() => setFactor(1)} title="Fit width">
+                      {Math.round(zoom * 100)}%
+                    </button>
+                    <button className="icon-button" aria-label="Zoom in" disabled={factor >= 3} onClick={() => setFactor((f) => Math.min(3, f + 0.25))}>
+                      <Icon name="plus" />
+                    </button>
+                  </div>
+                </div>
+                <div className="side-actions">
+                  <button className="button button-primary" disabled={saving} onClick={() => output('download')}>
+                    <Icon name="download" size={18} />
+                    {saving ? 'Preparing…' : 'Download'}
+                  </button>
+                  <button className="button button-plain" disabled={saving} onClick={() => output('print')}>
+                    <Icon name="print" size={18} />
+                    Print
+                  </button>
+                </div>
+              </div>
+            }
             open={panelOpen}
             onClose={() => setPanelOpen(false)}
             onAutofill={autofill}
@@ -313,11 +335,19 @@ export function Workspace({ doc, saved, updateSaved, onClose }: Props) {
             onForget={() => {
               clearSaved();
               updateSaved({ profile: EMPTY_PROFILE, signature: null, initials: null });
-              setToast('Your saved details and signature were removed from this browser.');
+              setToast('Details cleared');
             }}
           />
         </div>
 
+        <div className="fab">
+          <button className="button button-plain" aria-label="Details and tools" onClick={() => setPanelOpen((o) => !o)}>
+            <Icon name="panel" size={18} />
+          </button>
+          <button className="button button-primary" disabled={saving} onClick={() => output('download')}>
+            <Icon name="download" size={18} />
+          </button>
+        </div>
         {state.tool && (
           <div className="hint" role="status">
             {TOOL_HINT[state.tool]}
