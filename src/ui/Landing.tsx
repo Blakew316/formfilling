@@ -88,7 +88,7 @@ export function Landing({ busy, error, docs, onFile, onOpen, onDownload, onPrint
 
       <header className="hero">
         <div className="hero-mark">
-          <Logo size={compact ? 220 : 280} />
+          <Logo size={compact ? 92 : 112} />
         </div>
         <h1>
           <Wordmark />

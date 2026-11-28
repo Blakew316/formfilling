@@ -121,24 +121,21 @@ button:disabled { cursor: default; }
 .input:focus { background: var(--panel); border-color: var(--reactor); box-shadow: 0 0 0 3px var(--reactor-soft); }
 
 /* Brand */
-.logo { display: block; flex: none; }
+.logo { display: block; flex: none; color: var(--ink); }
 .wordmark { font-stretch: 125%; font-weight: 800; letter-spacing: 0.02em; line-height: 1; text-transform: uppercase; }
 
 /* Start screen */
 .home { position: relative; min-height: 100%; padding: 0 24px 72px; overflow-x: hidden; }
-/* The reactor lights the page around it; this is the screen's one flourish. */
+/* A soft wash of the accent behind the mark; the screen's one flourish. */
 .home::before {
   content: ''; position: absolute; left: 50%; top: -140px; width: 820px; height: 640px; transform: translateX(-50%); pointer-events: none;
-  background: radial-gradient(closest-side, rgba(22, 180, 232, 0.2), rgba(22, 180, 232, 0.07) 55%, transparent);
+  background: radial-gradient(closest-side, rgba(22, 180, 232, 0.13), rgba(22, 180, 232, 0.04) 55%, transparent);
 }
-:root[data-theme='dark'] .home::before { background: radial-gradient(closest-side, rgba(56, 198, 244, 0.22), rgba(56, 198, 244, 0.06) 55%, transparent); }
+:root[data-theme='dark'] .home::before { background: radial-gradient(closest-side, rgba(56, 198, 244, 0.14), rgba(56, 198, 244, 0.04) 55%, transparent); }
 .home-theme { position: absolute; top: 16px; right: 16px; z-index: 2; }
 .hero { position: relative; display: flex; flex-direction: column; align-items: center; text-align: center; max-width: 440px; margin: 0 auto; padding-top: 56px; }
 .home.is-empty .hero { min-height: 100vh; min-height: 100svh; justify-content: center; padding: 24px 0 64px; }
-.hero-mark { position: relative; margin: -28px 0 -18px; }
-/* A soft reflection under the mark, so it rests on the page instead of hovering at random. */
-.hero-mark::after { content: ''; position: absolute; left: 30%; right: 30%; bottom: 17%; height: 18px; border-radius: 50%; background: radial-gradient(closest-side, rgba(10, 60, 90, 0.22), transparent); filter: blur(4px); z-index: -1; }
-:root[data-theme='dark'] .hero-mark::after { background: radial-gradient(closest-side, rgba(56, 198, 244, 0.35), transparent); }
+.hero-mark { color: var(--ink); margin-bottom: 22px; }
 .hero h1 { font-size: 46px; }
 .hero .wordmark { font-stretch: 118%; letter-spacing: 0.05em; }
 .hero-line { margin-top: 12px; font-size: 18px; color: var(--steel); }
@@ -239,7 +236,7 @@ textarea.widget { resize: none; padding: 2px 3px; }
 .sidebar-grip { display: none; }
 .side-top { position: sticky; top: 0; z-index: 2; background: var(--panel); padding: 14px 14px 16px; border-bottom: 1px solid var(--hair); display: flex; flex-direction: column; gap: 10px; }
 .side-row { display: flex; align-items: center; gap: 2px; }
-.side-home { display: flex; align-items: center; gap: 0; padding: 0 0 0 4px; height: 40px; overflow: visible; border-radius: var(--r-s); color: var(--steel); }
+.side-home { display: flex; align-items: center; gap: 2px; padding: 0 6px 0 4px; height: 40px; border-radius: var(--r-s); color: var(--steel); }
 .side-home:hover { background: var(--well); color: var(--ink); }
 .side-file { flex: 1; min-width: 0; padding: 0 6px; }
 .side-file strong { display: block; font-weight: 640; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
