@@ -35,8 +35,9 @@ function cutOut(frame: ImageData, core: Uint8ClampedArray): void {
   const d = frame.data;
   for (let i = 0, p = 0; p < core.length; i += 4, p++) {
     const r = d[i], g = d[i + 1], b = d[i + 2];
-    const light = Math.max(r, g, b);
-    const a = Math.max(core[p], Math.min(255, light * 1.1));
+    const light = Math.max(r, g, b) / 255;
+    // Faint glow fades faster than bright glow, so its outer edge dissolves instead of drawing a rim.
+    const a = Math.max(core[p], Math.round(255 * light * Math.sqrt(light)));
     if (a === 0) {
       d[i + 3] = 0;
       continue;

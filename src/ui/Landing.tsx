@@ -1,6 +1,7 @@
 /**
- * Start screen. Left rail: the mark, the wordmark and Open PDF. Right: saved documents
- * as a gallery of first-page previews; with nothing saved, the right side is the drop target.
+ * Start screen: one centred composition, the reactor mark lit on the page, the wordmark
+ * and Open PDF, with saved documents below (a preview gallery on wide screens, a list on phones).
+ * Dropping a PDF anywhere on the page also opens it.
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { SavedDocMeta } from '../state/library';
@@ -26,7 +27,7 @@ function edited(ms: number): string {
   return `Edited ${d.toLocaleDateString([], { month: 'short', day: 'numeric', year: d.getFullYear() === now.getFullYear() ? undefined : 'numeric' })}`;
 }
 
-/** True on phone-width screens, where the rail collapses into a header. */
+/** True on phone-width screens, where the hero mark is drawn smaller. */
 function useNarrow(): boolean {
   const query = '(max-width: 900px)';
   const [narrow, setNarrow] = useState(() => matchMedia(query).matches);
@@ -80,26 +81,28 @@ export function Landing({ busy, error, docs, onFile, onOpen, onDownload, onPrint
   const compact = useNarrow();
 
   return (
-    <div className={`home${dragging ? ' is-dragging' : ''}`}>
-      <aside className="rail">
-        <div className="rail-mark">
-          <Logo size={compact ? 72 : 132} />
-          <Wordmark />
-          <p className="rail-line">Agreements, filled and signed.</p>
+    <div className={`home${dragging ? ' is-dragging' : ''}${docs.length ? '' : ' is-empty'}`}>
+      <div className="home-theme">
+        <ThemeToggle />
+      </div>
+
+      <header className="hero">
+        <div className="hero-mark">
+          <Logo size={compact ? 168 : 216} />
         </div>
-        <button className="button button-ink button-large" disabled={busy} onClick={choose}>
-          <Icon name="upload" size={18} />
+        <h1>
+          <Wordmark />
+        </h1>
+        <p className="hero-line">Agreements, filled and signed.</p>
+        <button className="button button-ink button-hero" disabled={busy} onClick={choose}>
+          <Icon name="upload" size={20} />
           {busy ? 'Opening…' : 'Open PDF'}
         </button>
         {error && (
-          <p className="rail-error" role="alert">
+          <p className="hero-error" role="alert">
             {error}
           </p>
         )}
-        <div className="rail-foot">
-          <span>Saved on this device</span>
-          <ThemeToggle />
-        </div>
         <input
           ref={input}
           type="file"
@@ -111,72 +114,67 @@ export function Landing({ busy, error, docs, onFile, onOpen, onDownload, onPrint
             e.target.value = '';
           }}
         />
-      </aside>
+      </header>
 
-      <main className="shelf">
-        {docs.length === 0 ? (
-          <button className="shelf-empty" disabled={busy} onClick={choose}>
-            <span className="shelf-empty-sheet" aria-hidden="true" />
-            <strong>Drop a PDF here</strong>
-            <span>Reseller, partner, ISV and ISO agreements open ready to fill.</span>
-          </button>
-        ) : (
-          <>
-            <header className="shelf-head">
-              <h1>Documents</h1>
-              <span className="shelf-count">{docs.length}</span>
+      {docs.length > 0 && (
+        <main className="shelf">
+          <div className="shelf-head">
+            <h2>Documents</h2>
+            <span className="shelf-count">{docs.length}</span>
+            {docs.length > 4 && (
               <label className="search">
                 <input type="search" placeholder="Search" aria-label="Search documents" value={query} onChange={(e) => setQuery(e.target.value)} />
               </label>
-            </header>
-            {shown.length === 0 && <p className="shelf-none">No documents match “{query}”.</p>}
-            <ul className="grid">
-              {shown.map((d) => {
-                const status = d.signed ? 'signed' : d.filled ? 'filled' : 'new';
-                return (
-                  <li key={d.id} className="tile">
-                    <button className="tile-open" disabled={busy} onClick={() => onOpen(d.id)} aria-label={`Open ${displayName(d.name)}`}>
-                      <span className="tile-sheet">{d.thumb ? <img src={d.thumb} alt="" /> : <span className="tile-blank" />}</span>
-                    </button>
-                    <div className="tile-body">
+            )}
+          </div>
+          {shown.length === 0 && <p className="shelf-none">No documents match “{query}”.</p>}
+          <ul className="grid">
+            {shown.map((d) => {
+              const status = d.signed ? 'signed' : d.filled ? 'filled' : 'new';
+              return (
+                <li key={d.id} className="tile">
+                  <button className="tile-open" disabled={busy} onClick={() => onOpen(d.id)} aria-label={`Open ${displayName(d.name)}`}>
+                    <span className="tile-sheet">{d.thumb ? <img src={d.thumb} alt="" /> : <span className="tile-blank" />}</span>
+                    <span className="tile-body">
                       <strong title={d.name}>{displayName(d.name)}</strong>
                       <span className={`status status-${status}`}>{STATUS[status]}</span>
                       <span className="tile-meta">
                         {edited(d.updatedAt)}, {d.pages} {d.pages === 1 ? 'page' : 'pages'}
                       </span>
+                    </span>
+                  </button>
+                  {confirm === d.id ? (
+                    <div className="tile-actions is-confirm">
+                      <button className="button button-danger" onClick={() => (onDelete(d.id), setConfirm(null))}>
+                        Delete
+                      </button>
+                      <button className="button button-quiet" onClick={() => setConfirm(null)}>
+                        Keep
+                      </button>
                     </div>
-                    {confirm === d.id ? (
-                      <div className="tile-actions is-confirm">
-                        <button className="button button-danger" onClick={() => (onDelete(d.id), setConfirm(null))}>
-                          Delete
-                        </button>
-                        <button className="button button-quiet" onClick={() => setConfirm(null)}>
-                          Keep
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="tile-actions">
-                        <button className="icon-button" aria-label="Download" title="Download" disabled={busy} onClick={() => onDownload(d.id)}>
-                          <Icon name="download" />
-                        </button>
-                        <button className="icon-button" aria-label="Print" title="Print" disabled={busy} onClick={() => onPrint(d.id)}>
-                          <Icon name="print" />
-                        </button>
-                        <button className="icon-button" aria-label="Delete" title="Delete" onClick={() => setConfirm(d.id)}>
-                          <Icon name="trash" />
-                        </button>
-                      </div>
-                    )}
-                  </li>
-                );
-              })}
-            </ul>
-          </>
-        )}
-        <div className="drop-veil" aria-hidden="true">
-          <span>Drop to open</span>
-        </div>
-      </main>
+                  ) : (
+                    <div className="tile-actions">
+                      <button className="icon-button" aria-label="Download" title="Download" disabled={busy} onClick={() => onDownload(d.id)}>
+                        <Icon name="download" />
+                      </button>
+                      <button className="icon-button" aria-label="Print" title="Print" disabled={busy} onClick={() => onPrint(d.id)}>
+                        <Icon name="print" />
+                      </button>
+                      <button className="icon-button" aria-label="Delete" title="Delete" onClick={() => setConfirm(d.id)}>
+                        <Icon name="trash" />
+                      </button>
+                    </div>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </main>
+      )}
+
+      <div className="drop-veil" aria-hidden="true">
+        <span>Drop to open</span>
+      </div>
     </div>
   );
 }
