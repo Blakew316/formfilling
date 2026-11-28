@@ -10,3 +10,4 @@ tests/local
 # Auto-saved session notes from the anchor-memory plugin; they change every session.
 .anchor
 .netlify
+deploy-*.zip
