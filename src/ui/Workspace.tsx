@@ -47,7 +47,7 @@ export function Workspace({ doc, saved, updateSaved, onClose }: Props) {
   const widest = useMemo(() => Math.max(...doc.pages.map((p) => p.width)), [doc.pages]);
   useEffect(() => {
     const el = scroller.current!;
-    const measure = () => setFit(Math.min(1.5, Math.max(0.3, (el.clientWidth - 32) / widest)));
+    const measure = () => setFit(Math.min(1.25, Math.max(0.3, (el.clientWidth - 48) / widest)));
     measure();
     const observer = new ResizeObserver(measure);
     observer.observe(el);

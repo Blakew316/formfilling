@@ -123,12 +123,12 @@ export function PageView({ page }: { page: PageInfo }) {
       {!state.tool &&
         fields.map((field) => {
           const owner = ownerOf(field, doc.blocks, saved.profile);
-          const label = field.label ? (field.confidence === 'suggest' ? `${field.label}?` : field.label) : 'Fill';
+          const label = field.label || 'Fill';
           return (
             <button
               key={field.id}
               id={`slot-${field.id}`}
-              className={`slot slot-${owner}${pulseId === field.id ? ' is-pulsing' : ''}`}
+              className={`slot slot-${owner}${field.confidence !== 'auto' ? ' is-optional' : ''}${pulseId === field.id ? ' is-pulsing' : ''}`}
               style={{ left: field.rect.x * zoom, top: field.rect.y * zoom, width: field.rect.w * zoom, height: field.rect.h * zoom, fontSize: Math.min(10, field.rect.h * zoom * 0.6) }}
               title={owner === 'other' ? `${field.label} — this looks like the other party’s line` : `Fill ${field.label.toLowerCase() || 'this blank'}`}
               onClick={() => fillField(field)}

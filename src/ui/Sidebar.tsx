@@ -72,8 +72,7 @@ export function Sidebar({ onAutofill, onNext, onForget, open, onClose }: Props) 
 
       <section className="panel">
         <button className="button button-primary button-wide" onClick={onAutofill}>
-          <Icon name="sparkle" size={18} />
-          Auto-fill
+          Auto-fill blanks
         </button>
         <p className="panel-status">
           {mine.length === 0 && doc.widgets.length === 0

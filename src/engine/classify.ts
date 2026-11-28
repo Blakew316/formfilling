@@ -40,7 +40,7 @@ export function kindLabel(kind: FieldKind): string {
 }
 
 const COMPANY_WORDS =
-  'company|business|legal|entity|reseller|merchant|organi[sz]ation|firm|corporate|corporation|dba|vendor|distributor|partner|employer|contractor|supplier|licensee';
+  'company|business|legal|entity|reseller|merchant|organi[sz]ation|firm|corporate|corporation|dba|vendor|distributor|partner|employer|contractor|supplier|licensee|isv|iso|sub-iso|agent|referrer|affiliate';
 
 /** Matches a short form-style label such as "Print Name" or "Reseller Name". */
 function classifyLabel(raw: string): FieldKind {
