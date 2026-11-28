@@ -15,7 +15,7 @@ import { Icon } from './Icons';
 import { PageView } from './PageView';
 import { Sidebar } from './Sidebar';
 import { ThemeToggle } from './ThemeToggle';
-import { Logo } from './Brand';
+import { JarvisMark } from './Jarvis';
 import { displayName } from './Landing';
 import { SignatureDialog } from './SignatureDialog';
 import { overflows } from './textMetrics';
@@ -292,7 +292,7 @@ export function Workspace({ doc, initial, saved, updateSaved, onClose }: Props) 
                 <div className="side-row">
                   <button className="side-home" aria-label="All documents" title="All documents" onClick={close}>
                     <Icon name="back" size={16} />
-                    <Logo size={28} />
+                    <JarvisMark size={28} />
                   </button>
                   <div className="side-file" title={doc.name}>
                     <strong>{displayName(doc.name)}</strong>

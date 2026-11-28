@@ -5,7 +5,7 @@
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { SavedDocMeta } from '../state/library';
-import { Logo, Wordmark } from './Brand';
+import { JarvisCore } from './Jarvis';
 import { Icon } from './Icons';
 import { ThemeToggle } from './ThemeToggle';
 
@@ -92,30 +92,30 @@ export function Landing({ busy, error, docs, onFile, onOpen, onDownload, onPrint
       </div>
 
       <header className="hero">
-        <div className="hud">
-          <span className="hud-ring hud-outer" aria-hidden="true" />
-          <span className="hud-ring hud-ticks" aria-hidden="true" />
-          <span className="hud-ring hud-mid" aria-hidden="true" />
-          <span className="hud-ring hud-arc" aria-hidden="true" />
-          <Logo size={compact ? 104 : 124} glow />
-          <span className="readout readout-tl">
-            Documents<b>{pad(docs.length)}</b>
-          </span>
-          <span className="readout readout-tr">
-            Signed<b>{pad(signed)}</b>
-          </span>
-          <span className="readout readout-bl">
-            In progress<b>{pad(inProgress)}</b>
-          </span>
-          <span className="readout readout-br">
-            Status<b>{busy ? 'Loading' : 'Ready'}</b>
-          </span>
+        <h1 className="sr-only">Suit Up</h1>
+        <div className="jv-stage">
+          <JarvisCore size={compact ? 300 : 380} title="SUIT UP" />
         </div>
-        <h1>
-          <Wordmark />
-        </h1>
+        <dl className="datastrip">
+          <div>
+            <dt>Documents</dt>
+            <dd>{pad(docs.length)}</dd>
+          </div>
+          <div>
+            <dt>Signed</dt>
+            <dd>{pad(signed)}</dd>
+          </div>
+          <div>
+            <dt>In progress</dt>
+            <dd>{pad(inProgress)}</dd>
+          </div>
+          <div>
+            <dt>Status</dt>
+            <dd>{busy ? 'LOADING' : 'ONLINE'}</dd>
+          </div>
+        </dl>
         <p className="hero-line">Agreements, filled and signed.</p>
-        <button className="button button-ink button-hero" disabled={busy} onClick={choose}>
+        <button className="button button-hud button-hero" disabled={busy} onClick={choose}>
           <Icon name="upload" size={20} />
           {busy ? 'Opening…' : 'Open PDF'}
         </button>
