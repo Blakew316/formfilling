@@ -7,7 +7,7 @@
     <meta name="description" content="Fill and sign agreements." />
     <link rel="icon" type="image/svg+xml" href="./brand/reactor.svg" />
     <script>
-      try { if (localStorage.getItem("suitup.theme") === "dark") document.documentElement.dataset.theme = "dark"; } catch {}
+      var t = "dark"; try { t = localStorage.getItem("suitup.theme") === "light" ? "light" : "dark"; } catch {} document.documentElement.dataset.theme = t;
     </script>
     <title>Suit Up</title>
   </head>

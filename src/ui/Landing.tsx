@@ -45,6 +45,9 @@ export function displayName(file: string): string {
   return file.replace(/\.pdf$/i, '').replace(/[_]+/g, ' ').replace(/(?<=\S)-(?=\d{4}\b)/g, ' ').replace(/\s{2,}/g, ' ').trim();
 }
 
+/** Two-digit instrument readout. */
+const pad = (n: number) => String(n).padStart(2, '0');
+
 const STATUS = {
   signed: 'Signed',
   filled: 'In progress',
@@ -78,6 +81,8 @@ export function Landing({ busy, error, docs, onFile, onOpen, onDownload, onPrint
   }, [docs, query]);
 
   const choose = () => input.current?.click();
+  const signed = docs.filter((d) => d.signed).length;
+  const inProgress = docs.filter((d) => !d.signed && d.filled).length;
   const compact = useNarrow();
 
   return (
@@ -87,8 +92,24 @@ export function Landing({ busy, error, docs, onFile, onOpen, onDownload, onPrint
       </div>
 
       <header className="hero">
-        <div className="hero-mark">
-          <Logo size={compact ? 120 : 148} glow />
+        <div className="hud">
+          <span className="hud-ring hud-outer" aria-hidden="true" />
+          <span className="hud-ring hud-ticks" aria-hidden="true" />
+          <span className="hud-ring hud-mid" aria-hidden="true" />
+          <span className="hud-ring hud-arc" aria-hidden="true" />
+          <Logo size={compact ? 104 : 124} glow />
+          <span className="readout readout-tl">
+            Documents<b>{pad(docs.length)}</b>
+          </span>
+          <span className="readout readout-tr">
+            Signed<b>{pad(signed)}</b>
+          </span>
+          <span className="readout readout-bl">
+            In progress<b>{pad(inProgress)}</b>
+          </span>
+          <span className="readout readout-br">
+            Status<b>{busy ? 'Loading' : 'Ready'}</b>
+          </span>
         </div>
         <h1>
           <Wordmark />

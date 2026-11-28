@@ -1,5 +1,5 @@
 /**
- * Light / dark appearance. Light is the default; the choice is remembered per browser.
+ * Light / dark appearance. Dark is the default; the choice is remembered per browser.
  * index.html applies the saved theme before first paint so there is no flash.
  */
 export type Theme = 'light' | 'dark';
