@@ -292,7 +292,7 @@ export function Workspace({ doc, initial, saved, updateSaved, onClose }: Props) 
                 <div className="side-row">
                   <button className="side-home" aria-label="All documents" title="All documents" onClick={close}>
                     <Icon name="back" size={16} />
-                    <Logo size={34} />
+                    <Logo size={44} />
                   </button>
                   <div className="side-file" title={doc.name}>
                     <strong>{displayName(doc.name)}</strong>

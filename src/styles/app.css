@@ -135,9 +135,9 @@ button:disabled { cursor: default; }
 .home-theme { position: absolute; top: 16px; right: 16px; z-index: 2; }
 .hero { position: relative; display: flex; flex-direction: column; align-items: center; text-align: center; max-width: 440px; margin: 0 auto; padding-top: 56px; }
 .home.is-empty .hero { min-height: 100vh; min-height: 100svh; justify-content: center; padding: 24px 0 64px; }
-.hero-mark { position: relative; margin-bottom: 6px; }
+.hero-mark { position: relative; margin: -28px 0 -18px; }
 /* A soft reflection under the mark, so it rests on the page instead of hovering at random. */
-.hero-mark::after { content: ''; position: absolute; left: 22%; right: 22%; bottom: 8%; height: 18px; border-radius: 50%; background: radial-gradient(closest-side, rgba(10, 60, 90, 0.22), transparent); filter: blur(4px); z-index: -1; }
+.hero-mark::after { content: ''; position: absolute; left: 30%; right: 30%; bottom: 17%; height: 18px; border-radius: 50%; background: radial-gradient(closest-side, rgba(10, 60, 90, 0.22), transparent); filter: blur(4px); z-index: -1; }
 :root[data-theme='dark'] .hero-mark::after { background: radial-gradient(closest-side, rgba(56, 198, 244, 0.35), transparent); }
 .hero h1 { font-size: 46px; }
 .hero .wordmark { font-stretch: 118%; letter-spacing: 0.05em; }
@@ -239,7 +239,7 @@ textarea.widget { resize: none; padding: 2px 3px; }
 .sidebar-grip { display: none; }
 .side-top { position: sticky; top: 0; z-index: 2; background: var(--panel); padding: 14px 14px 16px; border-bottom: 1px solid var(--hair); display: flex; flex-direction: column; gap: 10px; }
 .side-row { display: flex; align-items: center; gap: 2px; }
-.side-home { display: flex; align-items: center; gap: 0; padding: 0 2px 0 4px; height: 40px; border-radius: var(--r-s); color: var(--steel); }
+.side-home { display: flex; align-items: center; gap: 0; padding: 0 0 0 4px; height: 40px; overflow: visible; border-radius: var(--r-s); color: var(--steel); }
 .side-home:hover { background: var(--well); color: var(--ink); }
 .side-file { flex: 1; min-width: 0; padding: 0 6px; }
 .side-file strong { display: block; font-weight: 640; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
