@@ -21,6 +21,10 @@
   --reactor-soft: rgba(22, 180, 232, 0.12);
   --reactor-ring: rgba(22, 180, 232, 0.45);
   --on-ink: #ffffff;
+  --red: #b3121b;
+  --red-deep: #7e0c12;
+  --gold: #c99b3f;
+  --wordmark: #8e1018;
   --ok: #138a52;
   --danger: #c4282b;
   --warn-bg: #fff7e6;
@@ -52,6 +56,10 @@
   --reactor-soft: rgba(56, 198, 244, 0.14);
   --reactor-ring: rgba(56, 198, 244, 0.5);
   --on-ink: #0c0f13;
+  --red: #c8202a;
+  --red-deep: #8a0f16;
+  --gold: #d9ae55;
+  --wordmark: #e0b55c;
   --ok: #3ccf8e;
   --danger: #ff5a52;
   --warn-bg: #2a2310;
@@ -90,8 +98,11 @@ button:disabled { cursor: default; }
 }
 .button:active:not(:disabled) { transform: translateY(1px); }
 .button:disabled { opacity: 0.45; }
-.button-ink { background: var(--ink); color: var(--on-ink); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 1px 2px rgba(20, 24, 30, 0.2); }
-@media (hover: hover) { .button-ink:hover:not(:disabled) { background: color-mix(in srgb, var(--ink) 86%, var(--reactor)); } }
+.button-ink {
+  color: #fff; background: linear-gradient(180deg, #d0242e, var(--red) 55%, var(--red-deep));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22), 0 0 0 1px rgba(201, 155, 63, 0.7), 0 2px 6px rgba(126, 12, 18, 0.35);
+}
+@media (hover: hover) { .button-ink:hover:not(:disabled) { background: linear-gradient(180deg, #df2f39, #c11720 55%, #8a0f16); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28), 0 0 0 1px rgba(232, 190, 100, 0.9), 0 4px 14px rgba(179, 18, 27, 0.4); } }
 .button-quiet { background: var(--well); color: var(--ink); }
 .button-quiet:hover:not(:disabled) { background: var(--hair); }
 .button-danger { background: var(--danger); color: #fff; height: 32px; padding: 0 12px; }
@@ -122,20 +133,23 @@ button:disabled { cursor: default; }
 
 /* Brand */
 .logo { display: block; flex: none; color: var(--ink); }
-.wordmark { font-stretch: 125%; font-weight: 800; letter-spacing: 0.02em; line-height: 1; text-transform: uppercase; }
+.wordmark { font-stretch: 125%; font-weight: 800; letter-spacing: 0.02em; line-height: 1; text-transform: uppercase; color: var(--wordmark); }
+:root[data-theme='dark'] .wordmark { background: linear-gradient(180deg, #f6dc96, #c99b3f 60%, #9a7128); -webkit-background-clip: text; background-clip: text; color: transparent; }
 
 /* Start screen */
 .home { position: relative; min-height: 100%; padding: 0 24px 72px; overflow-x: hidden; }
-/* A soft wash of the accent behind the mark; the screen's one flourish. */
+/* Reactor light washing the page behind the mark; the screen's one flourish. */
 .home::before {
   content: ''; position: absolute; left: 50%; top: -140px; width: 820px; height: 640px; transform: translateX(-50%); pointer-events: none;
-  background: radial-gradient(closest-side, rgba(22, 180, 232, 0.13), rgba(22, 180, 232, 0.04) 55%, transparent);
+  background: radial-gradient(closest-side, rgba(22, 180, 232, 0.16), rgba(22, 180, 232, 0.05) 55%, transparent);
 }
-:root[data-theme='dark'] .home::before { background: radial-gradient(closest-side, rgba(56, 198, 244, 0.14), rgba(56, 198, 244, 0.04) 55%, transparent); }
+:root[data-theme='dark'] .home::before { background: radial-gradient(closest-side, rgba(56, 198, 244, 0.2), rgba(56, 198, 244, 0.05) 55%, transparent); }
 .home-theme { position: absolute; top: 16px; right: 16px; z-index: 2; }
 .hero { position: relative; display: flex; flex-direction: column; align-items: center; text-align: center; max-width: 440px; margin: 0 auto; padding-top: 56px; }
 .home.is-empty .hero { min-height: 100vh; min-height: 100svh; justify-content: center; padding: 24px 0 64px; }
-.hero-mark { color: var(--ink); margin-bottom: 22px; }
+.hero-mark { margin-bottom: 26px; }
+.logo-glow { filter: drop-shadow(0 0 14px rgba(56, 198, 244, 0.45)) drop-shadow(0 6px 14px rgba(10, 30, 50, 0.25)); animation: breathe 4.5s ease-in-out infinite; }
+@keyframes breathe { 50% { filter: drop-shadow(0 0 26px rgba(56, 198, 244, 0.7)) drop-shadow(0 6px 14px rgba(10, 30, 50, 0.25)); } }
 .hero h1 { font-size: 46px; }
 .hero .wordmark { font-stretch: 118%; letter-spacing: 0.05em; }
 .hero-line { margin-top: 12px; font-size: 18px; color: var(--steel); }
