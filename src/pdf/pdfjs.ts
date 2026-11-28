@@ -44,3 +44,15 @@ export async function openPdf(bytes: Uint8Array): Promise<OpenedPdf> {
 }
 
 export { pdfjs };
+
+/** Renders the first page as a small JPEG for previews. */
+export async function renderThumb(proxy: PDFDocumentProxy, width = 360): Promise<string> {
+  const page = await proxy.getPage(1);
+  const base = page.getViewport({ scale: 1 });
+  const viewport = page.getViewport({ scale: width / base.width });
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.round(viewport.width);
+  canvas.height = Math.round(viewport.height);
+  await page.render({ canvas, viewport }).promise;
+  return canvas.toDataURL('image/jpeg', 0.82);
+}

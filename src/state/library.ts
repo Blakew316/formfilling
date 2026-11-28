@@ -17,6 +17,8 @@ export interface SavedDocMeta {
   /** Number of things placed on the document; 0 means opened but not filled. */
   filled: number;
   signed: boolean;
+  /** Small JPEG data URL of the first page, for the document gallery. */
+  thumb?: string;
 }
 
 export interface SavedDoc extends SavedDocMeta {
@@ -83,11 +85,11 @@ export async function loadDoc(id: string): Promise<SavedDoc | null> {
 }
 
 /** Stores a newly opened PDF. The bytes are written once; later saves only touch the content. */
-export async function createDoc(name: string, bytes: Uint8Array, pages: number): Promise<string> {
+export async function createDoc(name: string, bytes: Uint8Array, pages: number, thumb?: string): Promise<string> {
   const id = crypto.randomUUID();
   const now = Date.now();
   const tx = (await db()).transaction([META, DATA], 'readwrite');
-  tx.objectStore(META).put({ id, name, pages, createdAt: now, updatedAt: now, filled: 0, signed: false } satisfies SavedDocMeta);
+  tx.objectStore(META).put({ id, name, pages, createdAt: now, updatedAt: now, filled: 0, signed: false, thumb } satisfies SavedDocMeta);
   tx.objectStore(DATA).put({ bytes, content: { items: [], formValues: {} } }, id);
   await done(tx);
   return id;
@@ -109,6 +111,16 @@ export async function saveContent(id: string, content: Content): Promise<void> {
     signed: content.items.some((it) => it.type === 'image'),
   } satisfies SavedDocMeta);
   tx.objectStore(DATA).put({ bytes: data.bytes, content }, id);
+  await done(tx);
+}
+
+/** Adds a preview to a document saved before previews existed. Does not touch its modified time. */
+export async function setThumb(id: string, thumb: string): Promise<void> {
+  const database = await db();
+  const meta = await request(database.transaction(META).objectStore(META).get(id) as IDBRequest<SavedDocMeta | undefined>);
+  if (!meta) return;
+  const tx = database.transaction(META, 'readwrite');
+  tx.objectStore(META).put({ ...meta, thumb });
   await done(tx);
 }
 

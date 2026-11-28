@@ -6,7 +6,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { detectFields } from './engine/detect';
 import type { Content } from './state/editor';
-import { createDoc, deleteDoc, listDocs, loadDoc, requestPersistence, type SavedDocMeta } from './state/library';
+import { createDoc, deleteDoc, listDocs, loadDoc, requestPersistence, setThumb, type SavedDocMeta } from './state/library';
 import { loadSaved, storeSaved, type Saved } from './state/storage';
 import type { OpenDocument } from './ui/context';
 import { Landing } from './ui/Landing';
@@ -22,7 +22,27 @@ export function App() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const refresh = useCallback(() => listDocs().then(setDocs), []);
+  const refresh = useCallback(async () => {
+    const list = await listDocs();
+    setDocs(list);
+    // Documents saved before previews existed get one in the background.
+    const missing = list.filter((d) => !d.thumb);
+    if (!missing.length) return;
+    const { openPdf, renderThumb } = await import('./pdf/pdfjs');
+    for (const d of missing) {
+      try {
+        const record = await loadDoc(d.id);
+        if (!record) continue;
+        const pdf = await openPdf(record.bytes);
+        const thumb = await renderThumb(pdf.proxy);
+        pdf.proxy.loadingTask.destroy();
+        await setThumb(d.id, thumb);
+        setDocs((cur) => cur.map((x) => (x.id === d.id ? { ...x, thumb } : x)));
+      } catch {
+        // A document that cannot be previewed still opens; it just shows no picture.
+      }
+    }
+  }, []);
   useEffect(() => {
     refresh();
   }, [refresh]);
@@ -66,11 +86,12 @@ export function App() {
       guarded(async () => {
         if (file.size > MAX_BYTES) throw new Error('File is over 80 MB.');
         const bytes = new Uint8Array(await file.arrayBuffer());
-        const { openPdf } = await import('./pdf/pdfjs');
+        const { openPdf, renderThumb } = await import('./pdf/pdfjs');
         const pdf = await openPdf(bytes);
+        const thumb = await renderThumb(pdf.proxy).catch(() => undefined);
         pdf.proxy.loadingTask.destroy();
         requestPersistence();
-        const id = await createDoc(file.name, bytes, pdf.pages.length);
+        const id = await createDoc(file.name, bytes, pdf.pages.length, thumb);
         await openBytes(id, file.name, bytes);
       }),
     [guarded, openBytes],

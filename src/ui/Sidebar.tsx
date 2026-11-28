@@ -70,7 +70,7 @@ export function Sidebar({ top, onAutofill, onNext, onForget, open, onClose }: Pr
       )}
 
       <section className="panel">
-        <button className="button button-primary button-wide" onClick={onAutofill}>
+        <button className="button button-reactor button-wide" onClick={onAutofill}>
           Auto-fill
         </button>
         <p className="panel-status">

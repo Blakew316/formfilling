@@ -147,7 +147,7 @@ export function SignatureDialog({ role, fullName, onSave, onClose }: Props) {
               />
             ))}
           </div>
-          <button className="button button-primary" disabled={!canSave} onClick={save}>
+          <button className="button button-ink" disabled={!canSave} onClick={save}>
             Save
           </button>
         </footer>

@@ -15,6 +15,8 @@ import { Icon } from './Icons';
 import { PageView } from './PageView';
 import { Sidebar } from './Sidebar';
 import { ThemeToggle } from './ThemeToggle';
+import { Logo } from './Brand';
+import { displayName } from './Landing';
 import { SignatureDialog } from './SignatureDialog';
 import { overflows } from './textMetrics';
 import { downloadPdf, finishedPdf, outputName, printPdf } from './output';
@@ -288,11 +290,12 @@ export function Workspace({ doc, initial, saved, updateSaved, onClose }: Props) 
             top={
               <div className="side-top">
                 <div className="side-row">
-                  <button className="icon-button" aria-label="All documents" title="All documents" onClick={close}>
-                    <Icon name="back" />
+                  <button className="side-home" aria-label="All documents" title="All documents" onClick={close}>
+                    <Icon name="back" size={16} />
+                    <Logo size={34} />
                   </button>
                   <div className="side-file" title={doc.name}>
-                    <strong>{doc.name}</strong>
+                    <strong>{displayName(doc.name)}</strong>
                     <span>{saveState === 'saving' ? 'Saving…' : saveState === 'error' ? 'Not saved' : 'Saved'}</span>
                   </div>
                   <ThemeToggle />
@@ -317,11 +320,11 @@ export function Workspace({ doc, initial, saved, updateSaved, onClose }: Props) 
                   </div>
                 </div>
                 <div className="side-actions">
-                  <button className="button button-primary" disabled={saving} onClick={() => output('download')}>
+                  <button className="button button-ink" disabled={saving} onClick={() => output('download')}>
                     <Icon name="download" size={18} />
                     {saving ? 'Preparing…' : 'Download'}
                   </button>
-                  <button className="button button-plain" disabled={saving} onClick={() => output('print')}>
+                  <button className="button button-quiet" disabled={saving} onClick={() => output('print')}>
                     <Icon name="print" size={18} />
                     Print
                   </button>
@@ -341,10 +344,10 @@ export function Workspace({ doc, initial, saved, updateSaved, onClose }: Props) 
         </div>
 
         <div className="fab">
-          <button className="button button-plain" aria-label="Details and tools" onClick={() => setPanelOpen((o) => !o)}>
+          <button className="button button-quiet" aria-label="Details and tools" onClick={() => setPanelOpen((o) => !o)}>
             <Icon name="panel" size={18} />
           </button>
-          <button className="button button-primary" disabled={saving} onClick={() => output('download')}>
+          <button className="button button-ink" aria-label="Download" disabled={saving} onClick={() => output('download')}>
             <Icon name="download" size={18} />
           </button>
         </div>
